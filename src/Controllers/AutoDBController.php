@@ -5,8 +5,6 @@ namespace Leivingson\AutoDB\Controllers;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
-use function PHPUnit\Framework\stringContains;
-
 class AutoDBController
 {
     public function getTablesName(Command $command)
