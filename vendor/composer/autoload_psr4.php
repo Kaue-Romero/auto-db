@@ -6,5 +6,5 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'Leivingson\\Autodb\\' => array($baseDir . '/src'),
+    'Leivingson\\AutoDB\\' => array($baseDir . '/src'),
 );

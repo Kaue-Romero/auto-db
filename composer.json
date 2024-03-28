@@ -3,6 +3,11 @@
     "description": "This package helps you creating models from your database connection in laravel.",
     "type": "library",
     "license": "MIT",
+    "keywords": [
+        "database",
+        "model",
+        "laravel"
+    ],
     "autoload": {
         "psr-4": {
             "Leivingson\\AutoDB\\": "src/"

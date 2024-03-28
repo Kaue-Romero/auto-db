@@ -9,12 +9,12 @@ class ComposerStaticInit82db6b4a3e14a2ec8d5e20ba9f93b6b5
     public static $prefixLengthsPsr4 = array (
         'L' => 
         array (
-            'Leivingson\\Autodb\\' => 18,
+            'Leivingson\\AutoDB\\' => 18,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'Leivingson\\Autodb\\' => 
+        'Leivingson\\AutoDB\\' => 
         array (
             0 => __DIR__ . '/../..' . '/src',
         ),
