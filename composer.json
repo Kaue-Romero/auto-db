@@ -1,0 +1,29 @@
+{
+    "name": "leivingson/autodb",
+    "description": "This package helps you creating models from your database connection in laravel.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Leivingson\\AutoDB\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Kaue-Romero",
+            "email": "kaueleiving@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Leivingson\\AutoDB\\Services\\AutoDBServiceProvider"
+            ],
+            "aliases": {
+                "AutoDB": "Leivingson\\AutoDB\\AutoDB"
+            }
+        }
+    }
+}
