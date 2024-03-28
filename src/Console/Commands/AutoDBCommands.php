@@ -13,14 +13,14 @@ class AutoDBCommands extends Command
      *
      * @var string
      */
-    protected $signature = 'autodb:test';
+    protected $signature = 'autodb:generate';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Generate models from database tables given by the .env database connection.';
 
     /**
      * Create a new command instance.
@@ -59,16 +59,16 @@ class AutoDBCommands extends Command
 
         $tablesNames = $db->getTablesName($this);
 
-        foreach ($tablesNames as $tableName) {
+        foreach ($tablesNames as $tableName) { 
             $path = $this->getSourceFilePath($tableName);
             $contents = $this->getSourceFile($tableName);
 
             if (!$this->files->exists($path)) {
                 $result = $db->fillModel($contents, $tableName);
                 $this->files->put($path, $result);
-                $this->info("Model : {$tableName} created");
+                $this->info("Model: {$tableName} created");
             } else {
-                $this->info("Model : {$tableName} already exits");
+                $this->info("Model: {$tableName} already exits");
             }
 
 
