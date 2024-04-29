@@ -2,6 +2,7 @@
 
 namespace Leivingson\AutoDB\Services;
 
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Leivingson\AutoDB\Console\Commands\AutoDBCommands;
 
@@ -14,7 +15,7 @@ class AutoDBServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        View::addLocation(__DIR__.'/../Blades');
     }
 
     /**

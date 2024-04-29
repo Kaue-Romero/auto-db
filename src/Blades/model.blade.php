@@ -1,10 +1,8 @@
-<?php
-
-namespace {{ namespace }};
+namespace {{ $teste }};
 
 use Illuminate\Database\Eloquent\Model;
 
-class {{ class }} extends Model
+class {{ $tableName }} extends Model
 {
     /**
      * The attributes that are mass assignable.
@@ -12,7 +10,9 @@ class {{ class }} extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-
+    @foreach ($fillables as $fillable)
+    '{{ $fillable }}',
+    @endforeach
     ];
 
     /**
@@ -30,6 +30,8 @@ class {{ class }} extends Model
      * @var array<string, string>
      */
     protected $casts = [
-
+    @foreach ($casts as $key => $cast)
+    '{{ $key }}' => '{{ $cast }}',
+    @endforeach
     ];
 }

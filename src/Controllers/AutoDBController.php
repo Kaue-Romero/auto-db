@@ -4,6 +4,7 @@ namespace Leivingson\AutoDB\Controllers;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Pluralizer;
 
 class AutoDBController
 {
@@ -20,13 +21,17 @@ class AutoDBController
         return $tablesName;
     }
 
-    public function fillModel($contents, $tableName)
+    public function fillModel($tableName)
     {
         $tableDetails = DB::select("DESCRIBE $tableName");
         $fillable = [];
         $casts = [];
+
         foreach ($tableDetails as $tableDetail) {
             $type = explode("(", $tableDetail->Type)[0];
+            $key = $tableDetail->Key;
+            $extra = $tableDetail->Extra;
+
             switch (true) {
                 case strpos($tableDetail->Type, 'tinyint(1)') !== false:
                     $type = 'boolean';
@@ -53,36 +58,19 @@ class AutoDBController
                     break;
             }
 
-            if ($tableDetail->Key != 'PRI' || ($tableDetail->Key == 'PRI' && $tableDetail->Extra != 'auto_increment')) {
+            if ($key != 'PRI' || ($key == 'PRI' && str_contains($extra, 'auto_increment'))) {
                 $casts[$tableDetail->Field] = $type;
                 array_push($fillable, $tableDetail->Field);
             }
         }
-        $withFillable = $this->incrementField($contents, $fillable);
-        $withCasts = $this->incrementCasts($withFillable, $casts);
 
-        return $withCasts;
-    }
+        $page = view("model", [
+            'teste' => 'App\Models',
+            'tableName' => ucwords(Pluralizer::singular($tableName)),
+            'fillables' => $fillable,
+            'casts' => $casts
+        ])->render();
 
-    private function incrementField($contents, $fillable)
-    {
-        $putFillable = explode("\$fillable = [", $contents);
-        $fillableString = "";
-        foreach ($fillable as $value) {
-            $fillableString .= "'$value', \n";
-        }
-        $withFillable = $putFillable[0] . "\$fillable = [\n" . $fillableString . $putFillable[1];
-        return $withFillable;
-    }
-
-    private function incrementCasts($contents, $casts)
-    {
-        $putCasts = explode("\$casts = [", $contents);
-        $castsString = "";
-        foreach ($casts as $key => $value) {
-            $castsString .= "'$key' => '$value', \n";
-        }
-        $withCasts = $putCasts[0] . "\$casts = [\n" . $castsString . $putCasts[1];
-        return $withCasts;
+        return $page;
     }
 }

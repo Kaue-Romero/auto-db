@@ -55,79 +55,21 @@ class AutoDBCommands extends Command
             $this->makeDirectory(app_path('Models'));
         }
 
-        $db = new \Leivingson\AutoDB\Controllers\AutoDBController();
+        $controller = new \Leivingson\AutoDB\Controllers\AutoDBController();
 
-        $tablesNames = $db->getTablesName($this);
+        $tablesNames = $controller->getTablesName($this);
 
-        foreach ($tablesNames as $tableName) { 
+        foreach ($tablesNames as $tableName) {
             $path = $this->getSourceFilePath($tableName);
-            $contents = $this->getSourceFile($tableName);
 
             if (!$this->files->exists($path)) {
-                $result = $db->fillModel($contents, $tableName);
-                $this->files->put($path, $result);
+                $result = $controller->fillModel($tableName);
+                $this->files->put($path, '<?php' . PHP_EOL . $result);
                 $this->info("Model: {$tableName} created");
             } else {
                 $this->info("Model: {$tableName} already exits");
             }
-
-
         }
-    }
-
-    /**
-     * Return the stub file path
-     * @return string
-     *
-     */
-    public function getStubPath()
-    {
-        return __DIR__ . '/../../Stubs/DefaultModel.stub';
-    }
-
-    /**
-     **
-     * Map the stub variables present in stub to its value
-     *
-     * @return array
-     *
-     */
-    public function getStubVariables($tableName)
-    {
-        return [
-            'namespace' => 'App\\Models',
-            'class' => $this->getSingularClassName($tableName),
-        ];
-    }
-
-    /**
-     * Get the stub path and the stub variables
-     *
-     * @return bool|mixed|string
-     *
-     */
-    public function getSourceFile($tableName)
-    {
-        return $this->getStubContents($this->getStubPath(), $this->getStubVariables($tableName));
-    }
-
-
-    /**
-     * Replace the stub variables(key) with the desire value
-     *
-     * @param $stub
-     * @param array $stubVariables
-     * @return bool|mixed|string
-     */
-    public function getStubContents($stub, $stubVariables = [])
-    {
-        $contents = file_get_contents($stub);
-
-        foreach ($stubVariables as $search => $replace) {
-            $contents = str_replace('{{ ' . $search . ' }}', $replace, $contents);
-        }
-
-        return $contents;
     }
 
     /**
