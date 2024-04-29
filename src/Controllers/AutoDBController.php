@@ -14,6 +14,7 @@ class AutoDBController
         $tables = DB::select("SHOW FULL TABLES WHERE Table_Type = 'BASE TABLE'");
         $key = 'Tables_in_' . $database;
         $tablesName = [];
+        $command->info("Found: " . count($tables) . " tables");
         foreach ($tables as $table) {
             $command->info("Table found: " . $table->{$key});
             array_push($tablesName, $table->{$key});
@@ -26,6 +27,7 @@ class AutoDBController
         $tableDetails = DB::select("DESCRIBE $tableName");
         $fillable = [];
         $casts = [];
+
 
         foreach ($tableDetails as $tableDetail) {
             $type = explode("(", $tableDetail->Type)[0];
