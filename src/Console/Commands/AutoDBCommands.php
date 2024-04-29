@@ -59,17 +59,24 @@ class AutoDBCommands extends Command
 
         $tablesNames = $controller->getTablesName($this);
 
+        $progress = $this->getOutput()->createProgressBar(count($tablesNames));
+        $progress->setFormat("%message% %current%/%max% [%bar%] %percent:3s%%");
+        $progress->setMessage("Creating models for tables...");
+        $progress->setProgress(0);
+        $progress->minSecondsBetweenRedraws(.1);
+        $progress->start();
         foreach ($tablesNames as $tableName) {
             $path = $this->getSourceFilePath($tableName);
 
             if (!$this->files->exists($path)) {
                 $result = $controller->fillModel($tableName);
                 $this->files->put($path, '<?php' . PHP_EOL . $result);
-                $this->info("Model: {$tableName} created");
-            } else {
-                $this->info("Model: {$tableName} already exits");
             }
+            $progress->advance();
         }
+
+        $progress->setMessage("Models created successfully");
+        $progress->finish();
     }
 
     /**
