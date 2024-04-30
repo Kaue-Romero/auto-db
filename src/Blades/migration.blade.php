@@ -13,7 +13,7 @@ class Create{{$migrationName}}Table extends Migration
     {
         Schema::create('{{$tableName}}', function (Blueprint $table) {
             @foreach ($properties as $key => $propertie)
-            $table->{{$propertie['type']}}('{{$key}}'@if($propertie['lengthOrEnumValues'] != ""),@if(in_array($propertie['type'], ["set", "enum"]))[@endif{!!$propertie['lengthOrEnumValues']!!}@if(in_array($propertie['type'], ["set", "enum"]))]@endif @endif);
+            $table->{{$propertie['type']}}('{{$key}}'@if($propertie['lengthOrEnumValues'] != ""),@if(in_array($propertie['type'], ["set", "enum"]))[@endif{!!$propertie['lengthOrEnumValues']!!}@if(in_array($propertie['type'], ["set", "enum"]))]@endif{{""}}@endif)@if($propertie['null'])->nullable()@endif{{""}}@if($propertie['default'])->default({!!$propertie['default']!!})@endif{{""}}@if($propertie['defaultFunction']){!!$propertie['defaultFunction']!!}@endif;
             @endforeach
         });
     }
