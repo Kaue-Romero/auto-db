@@ -67,12 +67,124 @@ class AutoDBController
         }
 
         $page = view("model", [
-            'teste' => 'App\Models',
             'tableName' => ucwords(Pluralizer::singular($tableName)),
             'fillables' => $fillable,
             'casts' => $casts
         ])->render();
 
         return $page;
+    }
+
+    public function fillMigration($tableName)
+    {
+        $tableDetails = DB::select("DESCRIBE $tableName");
+        $properties = [];
+
+        foreach ($tableDetails as $tableDetail) {
+            $type = explode("(", $tableDetail->Type)[0];
+            $lengthOrEnumValues = explode(")", explode("(", $tableDetail->Type)[1] ?? null)[0] ?? null;
+            $key = $tableDetail->Key;
+            $extra = $tableDetail->Extra;
+            $null = $tableDetail->Null == 'YES' ? true : false;
+            $acceptLengthOrEnumValues = ['string', 'float', 'decimal', 'char', 'enum', 'set'];
+
+            if (in_array($type, $acceptLengthOrEnumValues)) {
+                $lengthOrEnumValues = $lengthOrEnumValues;
+            } else {
+                $lengthOrEnumValues = "";
+            }
+
+            $properties[$tableDetail->Field] = [
+                'type' => $this->getEloquentTypeFromMysql($type),
+                'lengthOrEnumValues' => $lengthOrEnumValues,
+                'key' => $key,
+                'extra' => $extra,
+                'null' => $null
+            ];
+        }
+
+        if($tableName == 'film')
+        {
+            $page = view("migration", [
+                'migrationName' => ucwords(Pluralizer::plural($tableName)),
+                'tableName' => strtolower(Pluralizer::plural($tableName)),
+                'properties' => $properties
+            ])->render();
+
+            return $page;
+        }
+
+        return;
+
+
+        $page = view("migration", [
+            'migrationName' => ucwords(Pluralizer::plural($tableName)),
+            'tableName' => strtolower(Pluralizer::plural($tableName)),
+            'properties' => $tableDetails
+        ])->render();
+
+        return $page;
+    }
+
+    public function getEloquentTypeFromMysql($type)
+    {
+        // Exceptions types
+        if($type == 'varchar')
+        {
+            return 'string';
+        }
+
+        $eloquentTypes = [
+            'string',
+            'bigInteger',
+            'binary',
+            'boolean',
+            'char',
+            'dateTime',
+            'date',
+            'decimal',
+            'double',
+            'enum',
+            'float',
+            'id',
+            'integer',
+            'json',
+            'longText',
+            'mediumInteger',
+            'mediumText',
+            'smallInteger',
+            'set',
+            'text',
+            'time',
+            'timestamp',
+            'timestamps',
+            'tinyInteger',
+            'tinyText',
+            'unsignedBigInteger',
+            'unsignedInteger',
+            'unsignedMediumInteger',
+            'unsignedSmallInteger',
+            'unsignedTinyInteger',
+            'year',
+        ];
+
+        $type = strtolower($type);
+
+        $returnType = $eloquentTypes[0];
+        $count = 0;
+        foreach ($eloquentTypes as $eloquentType) {
+            $lev = levenshtein($type, $eloquentType, 0, 1, 1);
+            if ($lev == 0) {
+                $returnType = $eloquentType;
+                break;
+            }
+
+            if ($lev < $count || $count == 0) {
+                $count = $lev;
+                $returnType = $eloquentType;
+            }
+        }
+
+        return $returnType;
     }
 }

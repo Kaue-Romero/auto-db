@@ -61,22 +61,40 @@ class AutoDBCommands extends Command
 
         $progress = $this->getOutput()->createProgressBar(count($tablesNames));
         $progress->setFormat("%message% %current%/%max% [%bar%] %percent:3s%%");
-        $progress->setMessage("Creating models for tables...");
+        $progress->setMessage("Creating migrations for tables...");
         $progress->setProgress(0);
         $progress->minSecondsBetweenRedraws(.1);
         $progress->start();
         foreach ($tablesNames as $tableName) {
-            $path = $this->getSourceFilePath($tableName);
-
+            $path = $this->getMigrationFilePath($tableName);
             if (!$this->files->exists($path)) {
-                $result = $controller->fillModel($tableName);
+                $result = $controller->fillMigration($tableName);
+                if($tableName != 'film') continue;
                 $this->files->put($path, '<?php' . PHP_EOL . $result);
             }
             $progress->advance();
         }
-
-        $progress->setMessage("Models created successfully");
+        $progress->setMessage("<fg=green>Migrations created successfully</>");
         $progress->finish();
+
+        // $progress = $this->getOutput()->createProgressBar(count($tablesNames));
+        // $progress->setFormat("%message% %current%/%max% [%bar%] %percent:3s%%");
+        // $progress->setMessage("Creating models for tables...");
+        // $progress->setProgress(0);
+        // $progress->minSecondsBetweenRedraws(.1);
+        // $progress->start();
+        // foreach ($tablesNames as $tableName) {
+        //     $path = $this->getSourceFilePath($tableName);
+
+        //     if (!$this->files->exists($path)) {
+        //         $result = $controller->fillModel($tableName);
+        //         $this->files->put($path, '<?php' . PHP_EOL . $result);
+        //     }
+        //     $progress->advance();
+        // }
+
+        // $progress->setMessage("Models created successfully");
+        // $progress->finish();
     }
 
     /**
@@ -89,6 +107,19 @@ class AutoDBCommands extends Command
         return app_path('Models/' . $this->getSingularClassName($tableName) . '.php');
     }
 
+    public function getMigrationFilePath($tableName)
+    {
+        $formatedDateTime = str_replace([" ", ":", "-", "T"], "_", now()->toDateTimeLocalString());
+
+        return database_path("migrations/".
+            $formatedDateTime .
+                "_create_" .
+                $this->getPluralMigrationName($tableName) .
+                "_table" .
+                ".php"
+        );
+    }
+
     /**
      * Return the Singular Capitalize Name
      * @param $name
@@ -97,6 +128,11 @@ class AutoDBCommands extends Command
     public function getSingularClassName($name)
     {
         return ucwords(Pluralizer::singular($name));
+    }
+
+    public function getPluralMigrationName($name)
+    {
+        return strtolower(Pluralizer::plural($name));
     }
 
     /**
