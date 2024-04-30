@@ -67,6 +67,7 @@ class AutoDBController
         }
 
         $page = view("model", [
+            'namespace' => 'App\Models',
             'tableName' => ucwords(Pluralizer::singular($tableName)),
             'fillables' => $fillable,
             'casts' => $casts
@@ -86,53 +87,55 @@ class AutoDBController
             $key = $tableDetail->Key;
             $extra = $tableDetail->Extra;
             $null = $tableDetail->Null == 'YES' ? true : false;
+            $unsinged = strpos($tableDetail->Type, 'unsigned') !== false ? true : false;
             $acceptLengthOrEnumValues = ['string', 'float', 'decimal', 'char', 'enum', 'set'];
+            $default = ctype_alpha($tableDetail->Default) ? "'" . $tableDetail->Default . "'" : $tableDetail->Default;
+            $defaultFunction = null;
+            if (strpos($default, '(')) {
+                $defaultFunction = $this->transcribeDefaultFunction($default);
+                $default = null;
+            }
 
             if (in_array($type, $acceptLengthOrEnumValues)) {
                 $lengthOrEnumValues = $lengthOrEnumValues;
             } else {
                 $lengthOrEnumValues = "";
             }
-
             $properties[$tableDetail->Field] = [
-                'type' => $this->getEloquentTypeFromMysql($type),
+                'type' => $this->getEloquentTypeFromMysql($type, $unsinged, $tableDetail->Type),
                 'lengthOrEnumValues' => $lengthOrEnumValues,
                 'key' => $key,
                 'extra' => $extra,
-                'null' => $null
+                'null' => $null,
+                'default' => $default,
+                'defaultFunction' => $defaultFunction
             ];
         }
-
-        if($tableName == 'film')
-        {
-            $page = view("migration", [
-                'migrationName' => ucwords(Pluralizer::plural($tableName)),
-                'tableName' => strtolower(Pluralizer::plural($tableName)),
-                'properties' => $properties
-            ])->render();
-
-            return $page;
-        }
-
-        return;
-
 
         $page = view("migration", [
             'migrationName' => ucwords(Pluralizer::plural($tableName)),
             'tableName' => strtolower(Pluralizer::plural($tableName)),
-            'properties' => $tableDetails
+            'properties' => $properties
         ])->render();
 
         return $page;
     }
 
-    public function getEloquentTypeFromMysql($type)
+    public function getEloquentTypeFromMysql($type, Bool $unsinged, $entireType)
     {
-        // Exceptions types
-        if($type == 'varchar')
-        {
-            return 'string';
+        // Exceptions mysql types that are not in eloquent
+        switch ($type) {
+            case 'varchar':
+                return 'string';
+                break;
+            case 'blob':
+                return 'binary';
+                break;
+            default:
+                break;
         }
+
+        if ($entireType == 'tinyint(1)') return 'boolean';
 
         $eloquentTypes = [
             'string',
@@ -169,6 +172,7 @@ class AutoDBController
         ];
 
         $type = strtolower($type);
+        $type = $unsinged ? 'unsigned' .  $type : $type;
 
         $returnType = $eloquentTypes[0];
         $count = 0;
@@ -186,5 +190,32 @@ class AutoDBController
         }
 
         return $returnType;
+    }
+
+    public function transcribeDefaultFunction($default)
+    {
+        $eloquentDefaultFunctions = [
+            "useCurrent",
+            "useCurrentOnUpdate"
+        ];
+
+        $default = strtolower($default);
+
+        $returnType = $eloquentDefaultFunctions[0];
+        $count = 0;
+        foreach ($eloquentDefaultFunctions as $eloquentDefaultFunction) {
+            $lev = levenshtein($default, $eloquentDefaultFunction, 0, 1, 1);
+            if ($lev == 0) {
+                $returnType = $eloquentDefaultFunction;
+                break;
+            }
+
+            if ($lev < $count || $count == 0) {
+                $count = $lev;
+                $returnType = $eloquentDefaultFunction;
+            }
+        }
+
+        return "->" . $returnType . "()";
     }
 }

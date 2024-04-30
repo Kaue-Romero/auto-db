@@ -61,40 +61,27 @@ class AutoDBCommands extends Command
 
         $progress = $this->getOutput()->createProgressBar(count($tablesNames));
         $progress->setFormat("%message% %current%/%max% [%bar%] %percent:3s%%");
-        $progress->setMessage("Creating migrations for tables...");
+        $progress->setMessage("Creating database settings for tables...");
         $progress->setProgress(0);
         $progress->minSecondsBetweenRedraws(.1);
         $progress->start();
         foreach ($tablesNames as $tableName) {
-            $path = $this->getMigrationFilePath($tableName);
-            if (!$this->files->exists($path)) {
+            $modelPath = $this->getSourceFilePath($tableName);
+
+            if (!$this->files->exists($modelPath)) {
+                $result = $controller->fillModel($tableName);
+                $this->files->put($modelPath, '<?php' . PHP_EOL . $result);
+            }
+
+            $migrationPath = $this->getMigrationFilePath($tableName);
+            if (!$this->files->exists($migrationPath)) {
                 $result = $controller->fillMigration($tableName);
-                if($tableName != 'film') continue;
-                $this->files->put($path, '<?php' . PHP_EOL . $result);
+                $this->files->put($migrationPath, '<?php' . PHP_EOL . $result);
             }
             $progress->advance();
         }
-        $progress->setMessage("<fg=green>Migrations created successfully</>");
+        $progress->setMessage("<fg=green>Database settings created successfully</>");
         $progress->finish();
-
-        // $progress = $this->getOutput()->createProgressBar(count($tablesNames));
-        // $progress->setFormat("%message% %current%/%max% [%bar%] %percent:3s%%");
-        // $progress->setMessage("Creating models for tables...");
-        // $progress->setProgress(0);
-        // $progress->minSecondsBetweenRedraws(.1);
-        // $progress->start();
-        // foreach ($tablesNames as $tableName) {
-        //     $path = $this->getSourceFilePath($tableName);
-
-        //     if (!$this->files->exists($path)) {
-        //         $result = $controller->fillModel($tableName);
-        //         $this->files->put($path, '<?php' . PHP_EOL . $result);
-        //     }
-        //     $progress->advance();
-        // }
-
-        // $progress->setMessage("Models created successfully");
-        // $progress->finish();
     }
 
     /**

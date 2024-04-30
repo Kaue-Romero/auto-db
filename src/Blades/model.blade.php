@@ -1,4 +1,4 @@
-namespace {{ $teste }};
+namespace {{ $namespace }};
 
 use Illuminate\Database\Eloquent\Model;
 
