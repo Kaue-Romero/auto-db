@@ -2,6 +2,7 @@
 
 namespace Leivingson\AutoDB\Controllers;
 
+use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Pluralizer;
@@ -27,7 +28,6 @@ class AutoDBController
         $tableDetails = DB::select("DESCRIBE $tableName");
         $fillable = [];
         $casts = [];
-
 
         foreach ($tableDetails as $tableDetail) {
             $type = explode("(", $tableDetail->Type)[0];
@@ -113,7 +113,6 @@ class AutoDBController
         }
 
         $page = view("migration", [
-            'migrationName' => ucwords(Pluralizer::plural($tableName)),
             'tableName' => strtolower(Pluralizer::plural($tableName)),
             'properties' => $properties
         ])->render();
