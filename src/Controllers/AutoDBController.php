@@ -80,14 +80,19 @@ class AutoDBController
     {
         $tableDetails = DB::select("DESCRIBE $tableName");
         $properties = [];
+        $primaryKeys = [];
 
         foreach ($tableDetails as $tableDetail) {
-            $type = explode("(", $tableDetail->Type)[0];
+            $unsinged = strpos($tableDetail->Type, 'unsigned') !== false ? true : false;
+            $type =  $this->getEloquentTypeFromMysql(explode("(", $tableDetail->Type)[0], $unsinged, $tableDetail->Type);
             $lengthOrEnumValues = explode(")", explode("(", $tableDetail->Type)[1] ?? null)[0] ?? null;
             $key = $tableDetail->Key;
+            if ($key == 'PRI' && $tableDetail->Extra != 'auto_increment') {
+                array_push($primaryKeys, $tableDetail->Field);
+            }
             $extra = $tableDetail->Extra;
-            $null = $tableDetail->Null == 'YES' ? true : false;
-            $unsinged = strpos($tableDetail->Type, 'unsigned') !== false ? true : false;
+            $null = $tableDetail->Null == 'YES' || $type == "timestamp" ? true : false;
+
             $acceptLengthOrEnumValues = ['string', 'float', 'decimal', 'char', 'enum', 'set'];
             $default = ctype_alpha($tableDetail->Default) ? "'" . $tableDetail->Default . "'" : $tableDetail->Default;
             $defaultFunction = null;
@@ -101,20 +106,22 @@ class AutoDBController
             } else {
                 $lengthOrEnumValues = "";
             }
+
             $properties[$tableDetail->Field] = [
-                'type' => $this->getEloquentTypeFromMysql($type, $unsinged, $tableDetail->Type),
+                'type' => $type,
                 'lengthOrEnumValues' => $lengthOrEnumValues,
                 'key' => $key,
                 'extra' => $extra,
                 'null' => $null,
                 'default' => $default,
-                'defaultFunction' => $defaultFunction
+                'defaultFunction' => $defaultFunction,
             ];
         }
 
         $page = view("migration", [
-            'tableName' => strtolower(Pluralizer::plural($tableName)),
-            'properties' => $properties
+            'tableName' => strtolower(Pluralizer::singular($tableName)),
+            'properties' => $properties,
+            'primaryKeys' => $primaryKeys
         ])->render();
 
         return $page;
@@ -157,9 +164,9 @@ class AutoDBController
             'smallInteger',
             'set',
             'text',
-            'time',
             'timestamp',
-            'timestamps',
+            'time',
+            'nullableTimestamps',
             'tinyInteger',
             'tinyText',
             'unsignedBigInteger',
