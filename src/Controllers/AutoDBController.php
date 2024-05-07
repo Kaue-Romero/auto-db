@@ -79,8 +79,17 @@ class AutoDBController
     public function fillMigration($tableName)
     {
         $tableDetails = DB::select("DESCRIBE $tableName");
+        $foreignKeys = DB::select("SHOW CREATE TABLE $tableName");
         $properties = [];
         $primaryKeys = [];
+
+        $foreignKeys = $foreignKeys[0]->{'Create Table'};
+        $foreignKeys = explode("\n", $foreignKeys);
+        $foreignKeys = array_filter($foreignKeys, function ($value) {
+            return strpos($value, 'FOREIGN KEY') !== false;
+        });
+
+        $foreignKeys = $this->transcribeForeignKeys($foreignKeys);
 
         foreach ($tableDetails as $tableDetail) {
             $unsinged = strpos($tableDetail->Type, 'unsigned') !== false ? true : false;
@@ -121,7 +130,8 @@ class AutoDBController
         $page = view("migration", [
             'tableName' => strtolower(Pluralizer::singular($tableName)),
             'properties' => $properties,
-            'primaryKeys' => $primaryKeys
+            'primaryKeys' => $primaryKeys,
+            'foreignKeys' => $foreignKeys
         ])->render();
 
         return $page;
@@ -223,5 +233,29 @@ class AutoDBController
         }
 
         return "->" . $returnType . "()";
+    }
+
+    public function transcribeForeignKeys($foreignKeys)
+    {
+        $declarations = [];
+
+        foreach ($foreignKeys as $foreignKey) {
+            $declaration = "\$table->foreign('";
+            $foreignId = explode("FOREIGN KEY", $foreignKey)[1];
+            $foreignId = explode("REFERENCES", $foreignId);
+            $foreignId = explode("(", $foreignId[0]);
+            $foreignId = explode("`", $foreignId[1]);
+            $foreignId = $foreignId[1];
+            $declaration .= $foreignId . "')->references('";
+            $reference = explode("(", $foreignId);
+            $reference = $reference[0];
+            $declaration .= $reference . "')->on('";
+            $table = explode("REFERENCES", $foreignKey);
+            $table = explode("`", $table[1]);
+            $table = $table[1];
+            $declaration .= $table . "');";
+            array_push($declarations, $declaration);
+        }
+        return $declarations;
     }
 }
