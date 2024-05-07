@@ -101,7 +101,6 @@ class AutoDBController
             }
             $extra = $tableDetail->Extra;
             $null = $tableDetail->Null == 'YES' || $type == "timestamp" ? true : false;
-
             $acceptLengthOrEnumValues = ['string', 'float', 'decimal', 'char', 'enum', 'set'];
             $default = ctype_alpha($tableDetail->Default) ? "'" . $tableDetail->Default . "'" : $tableDetail->Default;
             $defaultFunction = null;

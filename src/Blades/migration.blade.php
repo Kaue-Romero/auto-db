@@ -18,6 +18,7 @@ return new class extends Migration
             @endforeach
             @if(count($primaryKeys) > 0)$table->primary([@foreach($primaryKeys as $key => $primaryKey)'{{$primaryKey}}'@if($key != count($primaryKeys) - 1),@endif{{""}}@endforeach]);@endif{{PHP_EOL}}@if(count($foreignKeys) > 0)@foreach($foreignKeys as $foreignKey)
                         {!!$foreignKey!!}{{PHP_EOL}}@endforeach{{""}}@endif
+
         });
     }
 
