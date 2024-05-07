@@ -6,10 +6,13 @@
   <img src="https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="laravel"/>
 </p>
 
-# AutoDB
-## An automatic model generator for database
+# MySQL AutoDB
+## An automatic migrations and models generator for MySQL database
 
-The AutoDB is a tool that generates a database model from a given connection in .env file. The tool is designed to be used in the context of huges amount of data when migrating for Laravel or automatize a repetitive task. The tool takes the dataset from the database and generates a model with the attributes and cast for each column.
+The AutoDB is a tool that generates a database model from a given connection in .env file. 
+The tool is designed to be used in the context of huges amount of data when migrating for Laravel or automatize a repetitive task. 
+The project takes the dataset from the database and generates the migrations and models with the attributes and cast the fields in models for each column.
+The code uses Levenshtein Algorithm to translate MySQL types to Eloquent types.
 
 ### Installation
 ```composer require leivingson/autodb```
