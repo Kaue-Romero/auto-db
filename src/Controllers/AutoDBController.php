@@ -2,6 +2,7 @@
 
 namespace Leivingson\AutoDB\Controllers;
 
+use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Pluralizer;
@@ -27,7 +28,6 @@ class AutoDBController
         $tableDetails = DB::select("DESCRIBE $tableName");
         $fillable = [];
         $casts = [];
-
 
         foreach ($tableDetails as $tableDetail) {
             $type = explode("(", $tableDetail->Type)[0];
@@ -79,15 +79,28 @@ class AutoDBController
     public function fillMigration($tableName)
     {
         $tableDetails = DB::select("DESCRIBE $tableName");
+        $foreignKeys = DB::select("SHOW CREATE TABLE $tableName");
         $properties = [];
+        $primaryKeys = [];
+
+        $foreignKeys = $foreignKeys[0]->{'Create Table'};
+        $foreignKeys = explode("\n", $foreignKeys);
+        $foreignKeys = array_filter($foreignKeys, function ($value) {
+            return strpos($value, 'FOREIGN KEY') !== false;
+        });
+
+        $foreignKeys = $this->transcribeForeignKeys($foreignKeys);
 
         foreach ($tableDetails as $tableDetail) {
-            $type = explode("(", $tableDetail->Type)[0];
+            $unsinged = strpos($tableDetail->Type, 'unsigned') !== false ? true : false;
+            $type =  $this->getEloquentTypeFromMysql(explode("(", $tableDetail->Type)[0], $unsinged, $tableDetail->Type);
             $lengthOrEnumValues = explode(")", explode("(", $tableDetail->Type)[1] ?? null)[0] ?? null;
             $key = $tableDetail->Key;
+            if ($key == 'PRI' && $tableDetail->Extra != 'auto_increment') {
+                array_push($primaryKeys, $tableDetail->Field);
+            }
             $extra = $tableDetail->Extra;
-            $null = $tableDetail->Null == 'YES' ? true : false;
-            $unsinged = strpos($tableDetail->Type, 'unsigned') !== false ? true : false;
+            $null = $tableDetail->Null == 'YES' || $type == "timestamp" ? true : false;
             $acceptLengthOrEnumValues = ['string', 'float', 'decimal', 'char', 'enum', 'set'];
             $default = ctype_alpha($tableDetail->Default) ? "'" . $tableDetail->Default . "'" : $tableDetail->Default;
             $defaultFunction = null;
@@ -101,21 +114,23 @@ class AutoDBController
             } else {
                 $lengthOrEnumValues = "";
             }
+
             $properties[$tableDetail->Field] = [
-                'type' => $this->getEloquentTypeFromMysql($type, $unsinged, $tableDetail->Type),
+                'type' => $type,
                 'lengthOrEnumValues' => $lengthOrEnumValues,
                 'key' => $key,
                 'extra' => $extra,
                 'null' => $null,
                 'default' => $default,
-                'defaultFunction' => $defaultFunction
+                'defaultFunction' => $defaultFunction,
             ];
         }
 
         $page = view("migration", [
-            'migrationName' => ucwords(Pluralizer::plural($tableName)),
-            'tableName' => strtolower(Pluralizer::plural($tableName)),
-            'properties' => $properties
+            'tableName' => strtolower(Pluralizer::singular($tableName)),
+            'properties' => $properties,
+            'primaryKeys' => $primaryKeys,
+            'foreignKeys' => $foreignKeys
         ])->render();
 
         return $page;
@@ -158,9 +173,9 @@ class AutoDBController
             'smallInteger',
             'set',
             'text',
-            'time',
             'timestamp',
-            'timestamps',
+            'time',
+            'nullableTimestamps',
             'tinyInteger',
             'tinyText',
             'unsignedBigInteger',
@@ -217,5 +232,29 @@ class AutoDBController
         }
 
         return "->" . $returnType . "()";
+    }
+
+    public function transcribeForeignKeys($foreignKeys)
+    {
+        $declarations = [];
+
+        foreach ($foreignKeys as $foreignKey) {
+            $declaration = "\$table->foreign('";
+            $foreignId = explode("FOREIGN KEY", $foreignKey)[1];
+            $foreignId = explode("REFERENCES", $foreignId);
+            $foreignId = explode("(", $foreignId[0]);
+            $foreignId = explode("`", $foreignId[1]);
+            $foreignId = $foreignId[1];
+            $declaration .= $foreignId . "')->references('";
+            $reference = explode("(", $foreignId);
+            $reference = $reference[0];
+            $declaration .= $reference . "')->on('";
+            $table = explode("REFERENCES", $foreignKey);
+            $table = explode("`", $table[1]);
+            $table = $table[1];
+            $declaration .= $table . "');";
+            array_push($declarations, $declaration);
+        }
+        return $declarations;
     }
 }

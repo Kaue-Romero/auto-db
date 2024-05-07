@@ -96,7 +96,7 @@ class AutoDBCommands extends Command
 
     public function getMigrationFilePath($tableName)
     {
-        $formatedDateTime = str_replace([" ", ":", "-", "T"], "_", now()->toDateTimeLocalString());
+        $formatedDateTime = str_replace([" ", ":", "-", "T"], "_", now()->toDateString())."_".str_replace(":", "", now()->toTimeString());
 
         return database_path("migrations/".
             $formatedDateTime .
